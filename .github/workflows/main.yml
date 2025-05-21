@@ -1,51 +1,36 @@
-name: CI/CD Pipeline for Landing Page
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ "mater" ]  
-  pull_request:
-    branches: [ "master" ]  
+    branches: [ "main" ]  # Trigger saat push ke branch main
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest  
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Install dependencies
         run: |
-          npm install  # Jika menggunakan npm
-          # atau: yarn install (jika pakai yarn)
+          if [ -f "package.json" ]; then
+            npm install
+          fi
 
-      - name: Run tests
-        run: npm test  # Ganti dengan perintah tes proyek Anda
+      - name: Test HTML
+        run: |
+          npm install -g html-validate
+          html-validate index.html
 
-  build:
-    needs: test  # Jalankan setelah job 'test' selesai
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build project
-        run: npm run build  # Ganti dengan perintah build proyek Anda
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-output
-          path: ./dist  # Ganti dengan folder output build (misal: 'dist/')
-
-  deploy:
-    needs: build  # Jalankan setelah job 'build' selesai
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/master' 
+      - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist  # Folder hasil build
+          publish_dir: ./  
+          keep_files: true  

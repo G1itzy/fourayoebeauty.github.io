@@ -1,0 +1,51 @@
+name: CI/CD Pipeline for Landing Page
+
+on:
+  push:
+    branches: [ "mater" ]  
+  pull_request:
+    branches: [ "master" ]  
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          npm install  # Jika menggunakan npm
+          # atau: yarn install (jika pakai yarn)
+
+      - name: Run tests
+        run: npm test  # Ganti dengan perintah tes proyek Anda
+
+  build:
+    needs: test  # Jalankan setelah job 'test' selesai
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build project
+        run: npm run build  # Ganti dengan perintah build proyek Anda
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-output
+          path: ./dist  # Ganti dengan folder output build (misal: 'dist/')
+
+  deploy:
+    needs: build  # Jalankan setelah job 'build' selesai
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/master' 
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist  # Folder hasil build
